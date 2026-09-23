@@ -192,7 +192,7 @@ The prefix sits inside the plugin's own PSR-4 root (`Grav\Plugin\HelpdeskPro\`).
 | When | Run |
 |---|---|
 | First checkout, or after changing dependencies | `composer install` / `composer update`. Both prefix afterwards. |
-| Prefix again without touching dependencies | `composer prefix` |
+| Prefix again without touching dependencies | `composer install` (not `composer prefix` on its own: with `delete_vendor_packages` the originals are already gone, so a second Strauss run empties the prefixed autoloader) |
 | Before committing `vendor-prefixed/` or `vendor/` changes | `composer install --no-dev`, commit, then `composer install` to get phpunit back |
 
 Only commit vendor changes from a `--no-dev` install. A dev install writes phpunit into `vendor/composer/` and flips `'dev' => true` in `vendor-prefixed/composer/installed.php`; the prefixed code itself is identical either way (the packaging check compares the two).
