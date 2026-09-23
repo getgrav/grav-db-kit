@@ -12,7 +12,7 @@ The code is extracted from KahunaCart's newer database layer and Forum Pro's ser
 - `pdo_sqlite` for SQLite (the default engine), `pdo_mysql` for MySQL 8+ / MariaDB 10.6+, `pdo_pgsql` for PostgreSQL 14+
 
 ```
-composer require trilbymedia/grav-db-kit
+composer require getgrav/grav-db-kit
 ```
 
 Until the package is on Packagist, plugins use a Composer path repository pointing at `../grav-db-kit`.
@@ -276,7 +276,7 @@ Public class and method names follow KahunaCart's, with these differences:
 
 A plugin moves to the kit without moving any data: it passes the table names and savepoint prefix it already uses.
 
-1. Require `trilbymedia/grav-db-kit` and set up the Strauss prefix.
+1. Require `getgrav/grav-db-kit` and set up the Strauss prefix.
 2. Build the connection through the kit's `ConnectionFactory` with the plugin's `KitOptions`, and pass the plugin's `KitTables` to the `Migrator`, `Lease`, `KvStore`, `RateLimiter` and job queue.
 3. In every migration file, point the three `use` lines at the kit (`…\Database\Connection`, `…\Database\Dialect\Dialect`, `…\Database\Migration`). Nothing else in a migration file changes, and no step re-runs: the tracking rows are keyed by migration and step name, which stay the same.
 4. Point every other `use …\Database\Connection` (repositories, services, tests) at the kit, and delete the in-tree `classes/Database` (except anything plugin-specific, such as KahunaCart's `SettingsTable`).

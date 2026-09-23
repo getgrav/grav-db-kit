@@ -36,7 +36,7 @@ if ($y !== null) {
         && str_contains($y['yeti_file'], '/plugin-y/vendor-prefixed/yetidevworks/'), $y['yeti_file']);
     expect('the prefixed copy accepted an unprefixed Psr\\Log logger', true);
     expect('plugin-y carries its own prefixed kit (1.0.1) beside YetiSearch', $y['kit'] === '1.0.1'
-        && str_contains($y['kit_file'], '/plugin-y/vendor-prefixed/trilbymedia/'), $y['kit_file']);
+        && str_contains($y['kit_file'], '/plugin-y/vendor-prefixed/getgrav/'), $y['kit_file']);
 }
 if ($k !== null && $y !== null && $y['has_semantic_seam']) {
     expect('the 2.4 semantic seam exists only in the prefixed copy', !$k['has_semantic_seam'], [$k['has_semantic_seam'], $y['has_semantic_seam']]);
