@@ -1,3 +1,9 @@
+# v1.0.1
+## 09/23/2026
+
+1. [](#improved)
+    * Composer package renamed to `getgrav/grav-db-kit` to match its GitHub home. The PHP namespace stays `TrilbyMedia\GravDbKit\`
+
 # v1.0.0
 ## 09/23/2026
 

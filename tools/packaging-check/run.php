@@ -124,12 +124,12 @@ $kitPlugins = [
 ];
 foreach ($kitPlugins as $slug => [$version, $prefix]) {
     $ns = 'Plugin' . strtoupper(substr($slug, -1));
-    $strauss = $prefix === null ? null : straussConfig($prefix, "{$ns}_Vendor_", ['trilbymedia/grav-db-kit']);
+    $strauss = $prefix === null ? null : straussConfig($prefix, "{$ns}_Vendor_", ['getgrav/grav-db-kit']);
     $composer = pluginComposer(
         $slug,
         $ns,
-        [pathRepo("../kit-{$version}", 'trilbymedia/grav-db-kit', $version), $devRepo, $noPackagist],
-        ['trilbymedia/grav-db-kit' => $version],
+        [pathRepo("../kit-{$version}", 'getgrav/grav-db-kit', $version), $devRepo, $noPackagist],
+        ['getgrav/grav-db-kit' => $version],
         $devReq,
         $strauss,
     );
@@ -158,8 +158,8 @@ if ($withYeti) {
     $makePlugin('plugin-k', 'search-plugin', pluginComposer(
         'plugin-k',
         'PluginK',
-        [pathRepo('../kit-1.0.0', 'trilbymedia/grav-db-kit', '1.0.0')],
-        ['trilbymedia/grav-db-kit' => '1.0.0', 'yetidevworks/yetisearch' => '2.3.6'],
+        [pathRepo('../kit-1.0.0', 'getgrav/grav-db-kit', '1.0.0')],
+        ['getgrav/grav-db-kit' => '1.0.0', 'yetidevworks/yetisearch' => '2.3.6'],
         [],
         null,
     ), ['NS' => 'PluginK', 'CLASS' => 'PluginK', 'KIT' => 'TrilbyMedia\\GravDbKit', 'YETI' => 'YetiSearch', 'WORD' => 'kahunaword'], false);
@@ -181,10 +181,10 @@ if ($withYeti) {
     $yComposer = pluginComposer(
         'plugin-y',
         'PluginY',
-        [pathRepo('../kit-1.0.1', 'trilbymedia/grav-db-kit', '1.0.1'), ...$repos, $devRepo],
-        ['trilbymedia/grav-db-kit' => '1.0.1'] + $req,
+        [pathRepo('../kit-1.0.1', 'getgrav/grav-db-kit', '1.0.1'), ...$repos, $devRepo],
+        ['getgrav/grav-db-kit' => '1.0.1'] + $req,
         $devReq,
-        straussConfig('PluginY\\Vendor\\', 'PluginY_Vendor_', ['trilbymedia/grav-db-kit', 'yetidevworks/yetisearch'], ['psr/log']),
+        straussConfig('PluginY\\Vendor\\', 'PluginY_Vendor_', ['getgrav/grav-db-kit', 'yetidevworks/yetisearch'], ['psr/log']),
     );
     $makePlugin('plugin-y', 'search-plugin', $yComposer, [
         'NS' => 'PluginY',
@@ -246,11 +246,11 @@ if ($withYeti) {
 // Take the prefix out of each shipped kit copy again: what is left must be
 // the kit source byte for byte, so Strauss renamed and did nothing else.
 $rewrite = [
-    ...diffAfterUnprefixing("{$site}/plugin-a/vendor-prefixed/trilbymedia/grav-db-kit/src", "{$build}/kit-1.0.0/src", 'PluginA\\Vendor\\'),
-    ...diffAfterUnprefixing("{$site}/plugin-b/vendor-prefixed/trilbymedia/grav-db-kit/src", "{$build}/kit-1.0.1/src", 'PluginB\\Vendor\\'),
+    ...diffAfterUnprefixing("{$site}/plugin-a/vendor-prefixed/getgrav/grav-db-kit/src", "{$build}/kit-1.0.0/src", 'PluginA\\Vendor\\'),
+    ...diffAfterUnprefixing("{$site}/plugin-b/vendor-prefixed/getgrav/grav-db-kit/src", "{$build}/kit-1.0.1/src", 'PluginB\\Vendor\\'),
 ];
 if ($withYeti) {
-    $rewrite = [...$rewrite, ...diffAfterUnprefixing("{$site}/plugin-y/vendor-prefixed/trilbymedia/grav-db-kit/src", "{$build}/kit-1.0.1/src", 'PluginY\\Vendor\\')];
+    $rewrite = [...$rewrite, ...diffAfterUnprefixing("{$site}/plugin-y/vendor-prefixed/getgrav/grav-db-kit/src", "{$build}/kit-1.0.1/src", 'PluginY\\Vendor\\')];
 }
 
 // What a prefixed plugin ships besides its own code: vendor-prefixed/,

@@ -1,5 +1,5 @@
 {
-    "name": "trilbymedia/grav-db-kit",
+    "name": "getgrav/grav-db-kit",
     "type": "library",
     "description": "Shared database, migration, job queue and event infrastructure for Trilby Media's Grav plugins (SQLite, MySQL, PostgreSQL)",
     "keywords": ["grav", "database", "pdo", "sqlite", "mysql", "postgresql", "migrations", "job-queue"],

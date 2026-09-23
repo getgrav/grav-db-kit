@@ -44,14 +44,14 @@ This is Helpdesk Pro's. Another plugin changes the names, the prefixes and the p
             "options": {
                 "symlink": false,
                 "versions": {
-                    "trilbymedia/grav-db-kit": "1.0.0"
+                    "getgrav/grav-db-kit": "1.0.0"
                 }
             }
         }
     ],
     "require": {
         "php": ">=8.3",
-        "trilbymedia/grav-db-kit": "^1.0",
+        "getgrav/grav-db-kit": "^1.0",
         "yetidevworks/yetisearch": "^2.4"
     },
     "require-dev": {
@@ -79,14 +79,14 @@ This is Helpdesk Pro's. Another plugin changes the names, the prefixes and the p
             "namespace_prefix": "Grav\\Plugin\\HelpdeskPro\\Vendor\\",
             "classmap_prefix": "Grav_Plugin_HelpdeskPro_Vendor_",
             "packages": [
-                "trilbymedia/grav-db-kit",
+                "getgrav/grav-db-kit",
                 "yetidevworks/yetisearch"
             ],
             "delete_vendor_packages": true,
             "include_modified_date": false,
             "exclude_from_copy": {
                 "file_patterns": [
-                    "#^trilbymedia/grav-db-kit/(?!src/|composer\\.json$|LICENSE$)#",
+                    "#^getgrav/grav-db-kit/(?!src/|composer\\.json$|LICENSE$)#",
                     "#^yetidevworks/yetisearch/(?!src/|composer\\.json$|LICENSE$)#"
                 ],
                 "packages": [

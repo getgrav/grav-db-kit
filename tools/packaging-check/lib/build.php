@@ -142,7 +142,7 @@ function straussConfig(string $namespacePrefix, string $classmapPrefix, array $p
         'exclude_from_copy' => [
             'file_patterns' => [
                 // Ship each package's runtime code, licence and manifest only.
-                '#^trilbymedia/grav-db-kit/(?!src/|composer\.json$|LICENSE$)#',
+                '#^getgrav/grav-db-kit/(?!src/|composer\.json$|LICENSE$)#',
                 '#^yetidevworks/yetisearch/(?!src/|composer\.json$|LICENSE$)#',
             ],
         ],
