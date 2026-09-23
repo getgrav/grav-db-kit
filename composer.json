@@ -3,7 +3,11 @@
     "type": "library",
     "description": "Shared database, migration, job queue and event infrastructure for Trilby Media's Grav plugins (SQLite, MySQL, PostgreSQL)",
     "keywords": ["grav", "database", "pdo", "sqlite", "mysql", "postgresql", "migrations", "job-queue"],
-    "homepage": "https://github.com/trilbymedia/grav-db-kit",
+    "homepage": "https://github.com/getgrav/grav-db-kit",
+    "support": {
+        "issues": "https://github.com/getgrav/grav-db-kit/issues",
+        "source": "https://github.com/getgrav/grav-db-kit"
+    },
     "license": "MIT",
     "authors": [
         {
