@@ -256,6 +256,8 @@ A local MariaDB whose root account uses unix_socket auth is reachable through it
 
 Grav loads every plugin's autoloader into one process, so each plugin bundles its own copy of the kit under its own namespace prefix (`TrilbyMedia\GravDbKit\…` becomes, for example, `Grav\Plugin\HelpdeskPro\Vendor\TrilbyMedia\GravDbKit\…`). The kit is written so that works: no global state shared between copies, no `class_exists()` checks against its own unprefixed names, and no class names built from strings. Refer to kit classes with `use` statements and `::class`, which Strauss rewrites, including in migration files.
 
+The exact Strauss config, commands, `.gitignore` rules and verification steps are in [docs/packaging.md](docs/packaging.md); `composer packaging-check` runs the harness that proves two prefixed copies coexist.
+
 ## Changes from the in-tree copies
 
 Public class and method names follow KahunaCart's, with these differences:

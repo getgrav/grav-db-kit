@@ -36,7 +36,8 @@
     "scripts": {
         "test": "phpunit",
         "test:unit": "phpunit --testsuite Unit",
-        "test:integration": "phpunit --testsuite Integration"
+        "test:integration": "phpunit --testsuite Integration",
+        "packaging-check": "@php tools/packaging-check/run.php"
     },
     "config": {
         "sort-packages": true,

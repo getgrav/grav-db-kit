@@ -13,5 +13,6 @@
     * `Schema\InfraTables` migration steps for the KV, jobs and rate-limit tables
     * `Support\KvStore`, `Support\RateLimiter` (fixed window, buckets, `RateLimitResult`), `Support\UnsubscribeSigner`, `Support\Clock` / `SystemClock`
     * `Events\EventSink`, `CompositeSink` (sink failures caught and reported, never thrown) and `NullSink`
+    * `docs/packaging.md` and `tools/packaging-check`: the Strauss recipe each plugin uses to bundle a namespace-prefixed copy, with a harness proving two prefixed copies coexist in one PHP process
     * `Testing\EngineProvider`, `MigratedDatabase` (snapshot replay into in-memory SQLite), `SpySink` and `FrozenClock` for plugin test suites
     * CI on SQLite, MySQL and PostgreSQL
