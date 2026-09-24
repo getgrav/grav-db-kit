@@ -1,3 +1,10 @@
+# v1.0.2
+## 09/23/2026
+
+1. [](#bugfix)
+    * `RateLimiter`'s opportunistic sweep only prunes the calling bucket. It worked out its cutoff from the calling window and then swept every bucket, so a busy one-minute bucket deleted an hourly bucket's current rows a couple of minutes into the hour and reset its count. `prune()` takes an optional bucket
+    * `AdoptionTest` skips a plugin that already runs on the kit instead of failing on its missing in-tree classes
+
 # v1.0.1
 ## 09/23/2026
 

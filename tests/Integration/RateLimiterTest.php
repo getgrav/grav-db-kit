@@ -198,6 +198,38 @@ final class RateLimiterTest extends TestCase
         $this->assertSame([self::BUCKET . ':busy'], $this->keys($db), 'the abandoned key aged out on its own');
     }
 
+    public function testAShortBucketsSweepLeavesALongerBucketsCurrentWindowAlone(): void
+    {
+        $db = TestEngine::migrated();
+        $limiter = new RateLimiter($db);
+        $hour = 3600;
+        $now = 7 * $hour + 1800; // half an hour into an hourly window
+
+        $limiter->hit('hourly', 'k', 1, $hour, $now);
+
+        // Enough one-minute calls to all but guarantee several sweeps, each
+        // with a cutoff two minutes back: well after the hourly row's start.
+        for ($i = 0; $i < 1000; $i++) {
+            $limiter->hit('minute', 'busy', 100000, self::WINDOW, $now);
+        }
+
+        $this->assertFalse(
+            $limiter->hit('hourly', 'k', 1, $hour, $now)->allowed,
+            'the hourly count survived the one-minute bucket\'s sweeps'
+        );
+    }
+
+    public function testPruneCanBeLimitedToOneBucket(): void
+    {
+        $db = TestEngine::migrated();
+        $limiter = new RateLimiter($db, pruneOdds: 0);
+        $limiter->hit('a', 'k', 10, self::WINDOW, self::NOW);
+        $limiter->hit('b', 'k', 10, self::WINDOW, self::NOW);
+
+        $this->assertSame(1, $limiter->prune(self::NOW + 5 * self::WINDOW, 'a'));
+        $this->assertSame(['b:k'], $this->keys($db));
+    }
+
     // ------------------------------------------------------ kit additions
 
     public function testAKeyLongerThanTheColumnIsHashedRatherThanCut(): void

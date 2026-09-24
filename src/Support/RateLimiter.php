@@ -32,7 +32,10 @@ use TrilbyMedia\GravDbKit\Database\KitTables;
  * Every call names a **bucket** as well as a key. That is what lets one address
  * be counted separately for signing in, posting a form and asking for a fresh
  * link, without a table per route, and a caller cannot spend one route's budget
- * on another by picking a key that collides.
+ * on another by picking a key that collides. A bucket has one window length:
+ * the opportunistic prune works out its cutoff from the calling window and
+ * sweeps only that bucket, so two window lengths sharing a bucket would prune
+ * each other's rows.
  *
  * The key is opaque: whatever the caller passes is what gets stored. A key
  * derived from anything personal or secret (an address, an email, a token)
@@ -106,7 +109,7 @@ final class RateLimiter
         $windowStart = intdiv($now, $windowSeconds) * $windowSeconds;
         $hits = $this->count($bucket, $key, $windowStart);
 
-        $this->maybePrune($windowStart, $windowSeconds);
+        $this->maybePrune($bucket, $windowStart, $windowSeconds);
 
         $allowed = $hits <= $limit;
 
@@ -118,13 +121,25 @@ final class RateLimiter
     }
 
     /**
-     * Drop every window that started before $before. Returns the row count.
-     * Public because it is also the whole of the maintenance story: a plugin
-     * that would rather sweep on a schedule than opportunistically can call it.
+     * Drop every window that started before $before, in one bucket or in all
+     * of them. Returns the row count. Public because it is also the whole of
+     * the maintenance story: a plugin that would rather sweep on a schedule
+     * than opportunistically can call it.
+     *
+     * A sweep across every bucket has to use a cutoff older than the longest
+     * window any bucket uses, or it resets that bucket's live counts.
      */
-    public function prune(int $before): int
+    public function prune(int $before, ?string $bucket = null): int
     {
-        return $this->db->delete($this->tables->rateLimits, 'window_start < ?', [$before]);
+        if ($bucket === null) {
+            return $this->db->delete($this->tables->rateLimits, 'window_start < ?', [$before]);
+        }
+
+        return $this->db->delete(
+            $this->tables->rateLimits,
+            'bucket = ? AND window_start < ?',
+            [self::bucket($bucket), $before]
+        );
     }
 
     /** A stable, non-reversible key for a value that should not be stored as given (an IP, an email). */
@@ -203,13 +218,18 @@ final class RateLimiter
         return $hits === null ? 1 : max(1, (int)$hits);
     }
 
-    private function maybePrune(int $windowStart, int $windowSeconds): void
+    /**
+     * The sweep stays inside the calling bucket, because the cutoff comes from
+     * this call's window. A 60 second bucket sweeping every bucket would
+     * delete an hourly bucket's current rows two minutes into the hour.
+     */
+    private function maybePrune(string $bucket, int $windowStart, int $windowSeconds): void
     {
         if ($this->pruneOdds < 1 || random_int(1, $this->pruneOdds) !== 1) {
             return;
         }
 
-        $this->prune($windowStart - self::PRUNE_WINDOWS * $windowSeconds);
+        $this->prune($windowStart - self::PRUNE_WINDOWS * $windowSeconds, $bucket);
     }
 
     private static function bucket(string $bucket): string

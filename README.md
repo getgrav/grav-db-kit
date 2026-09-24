@@ -4,7 +4,7 @@ Shared database, migration, job queue and event infrastructure for Grav plugins 
 
 It is a Composer package, not a Grav plugin, and it has no Grav dependency. Each plugin bundles its own copy, namespace-prefixed with Strauss, so plugins update it in their own releases and never need another plugin installed.
 
-The code is extracted from KahunaCart's newer database layer and Forum Pro's services. Both plugins still ship their in-tree copies; see [Switching an existing plugin](#switching-an-existing-plugin) for what changes when they move to the kit.
+The code is extracted from KahunaCart's newer database layer and Forum Pro's services. KahunaCart (1.3), Forum Pro (1.0.10) and Helpdesk Pro all bundle it now; [Switching an existing plugin](#switching-an-existing-plugin) records what changed when the first two moved over.
 
 ## Requirements
 
@@ -214,7 +214,7 @@ if (!$result->allowed) {
 }
 ```
 
-`hit(bucket, key, limit, window, ?now)` returns a `RateLimitResult` (`allowed`, `remaining`, `retryAfter`). Windows are aligned to the epoch; a denied call still counts; a limit of zero or less turns the bucket off and costs no queries. One row per bucket and key is rolled forward from window to window, and old rows are swept on roughly one call in `$pruneOdds` (0 turns that off). `prune($before)` drops windows that started before a time. Keys longer than 190 bytes are stored as their SHA-256. `anonymize($value)` hashes an IP or email for use as a key.
+`hit(bucket, key, limit, window, ?now)` returns a `RateLimitResult` (`allowed`, `remaining`, `retryAfter`). Windows are aligned to the epoch; a denied call still counts; a limit of zero or less turns the bucket off and costs no queries. One row per bucket and key is rolled forward from window to window, and old rows in the calling bucket are swept on roughly one call in `$pruneOdds` (0 turns that off). A bucket has one window length, because the sweep works out its cutoff from the calling window. `prune($before, ?$bucket)` drops windows that started before a time, in one bucket or in all of them. Keys longer than 190 bytes are stored as their SHA-256. `anonymize($value)` hashes an IP or email for use as a key.
 
 `UnsubscribeSigner($kv, $secretKey = 'unsubscribe_secret')` signs one-click unsubscribe links: `sign(string $subject, string $scope)` and `verify($subject, $scope, $token)`. The token is an HMAC-SHA256 over `{subject}|{scope}` with a secret created once in the KV store. A scope may not contain `|`.
 
@@ -266,7 +266,7 @@ Public class and method names follow KahunaCart's, with these differences:
 - `ConnectionFactory::create/sqlite/mysql/pgsql/fromPdo` take a trailing `?KitOptions`; `mysql()` also accepts `unix_socket`.
 - `Migrator::__construct(Connection, string|array $paths, ?KitTables, ?KitOptions)`: table names come from `KitTables`, the lock TTL from `KitOptions` (the private `LOCK_TTL` constant is gone), and the run-lock is a `Lease`, whose owner string carries a random tail per acquisition. New `connection()` and `tables()`.
 - `RateLimiter` moved from KahunaCart's `Security` namespace to `Support`. Its constructor is `(Connection, ?KitTables, int $pruneOdds = 50, ?Clock)`, so `pruneOdds:` as a named argument still works but not as the second positional one. The `TABLE` constant is gone (use `KitTables::$rateLimits`), and the table stores bucket and key in two columns (`bucket`, `rl_key`) instead of one joined `key`. Its insert is an insert-if-absent rather than a caught duplicate.
-- Forum Pro's `RateLimiter::hit(string $key, int $window, int $max): bool` becomes `hit($bucket, $key, $limit, $window)->allowed`, and `prune()` becomes `prune(int $before)`.
+- Forum Pro's `RateLimiter::hit(string $key, int $window, int $max): bool` becomes `hit($bucket, $key, $limit, $window)->allowed`, and `prune()` becomes `prune(int $before, ?string $bucket = null)`.
 - `KvStore` (Forum Pro's) takes `?KitTables` and `?Clock`, gains `delete()`, refuses keys over 64 bytes, and `remember()` no longer lets a second writer replace the first value.
 - `UnsubscribeSigner::sign(string $subject, string $scope)` takes a string subject instead of Forum Pro's `int $userId`. The token for `(string)$userId` is byte-for-byte the one Forum Pro issued.
 - `CompositeSink` gains `withErrorReporter()`, `add()` and `sinks()`.
