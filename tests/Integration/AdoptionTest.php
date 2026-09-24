@@ -261,6 +261,13 @@ final class AdoptionTest extends TestCase
 
         foreach ($candidates as $dir) {
             if (is_dir($dir . '/migrations') && is_dir($dir . '/classes/Database')) {
+                // A plugin that has switched no longer has its in-tree
+                // migrator to compare against; that comparison was the point.
+                $composer = json_decode((string)@file_get_contents($dir . '/composer.json'), true);
+                if (isset($composer['require']['getgrav/grav-db-kit'])) {
+                    self::markTestSkipped("{$name} at {$dir} already runs on the kit, so there is no in-tree copy to compare against");
+                }
+
                 return rtrim($dir, '/');
             }
         }
