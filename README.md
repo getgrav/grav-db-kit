@@ -6,6 +6,19 @@ It is a Composer package, not a Grav plugin, and it has no Grav dependency. Each
 
 The code is extracted from KahunaCart's newer database layer and Forum Pro's services. KahunaCart (1.3), Forum Pro (1.0.10) and Helpdesk Pro all bundle it now; [Switching an existing plugin](#switching-an-existing-plugin) records what changed when the first two moved over.
 
+## Used by
+
+| Package | How |
+|---|---|
+| grav-plugin-kahunacart | direct |
+| grav-plugin-forum-pro | direct |
+| grav-plugin-helpdesk-pro | direct |
+| grav-plugin-mailroom | direct, and through trilbymedia/grav-newsletters-kit |
+| trilbymedia/grav-newsletters-kit | direct (a library, not a plugin) |
+| grav-plugin-kahunacart-newsletters | only through grav-newsletters-kit; its composer.json marks the kit as provided by KahunaCart, so it runs on KahunaCart's bundled copy |
+
+Every plugin ships its own Strauss-prefixed copy, so a kit release reaches a plugin only when that plugin updates its vendor directory and is re-released, and grav-newsletters-kit has to be released before mailroom and kahunacart-newsletters can pick up a kit change. To re-check the list, grep for `"getgrav/grav-db-kit"` in the `composer.json` of the sibling repositories (`grep -l '"getgrav/grav-db-kit": ' ../grav-*/composer.json` from this repository).
+
 ## Requirements
 
 - PHP 8.3 or newer with `ext-pdo`
