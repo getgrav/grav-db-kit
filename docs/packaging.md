@@ -57,6 +57,9 @@ This is Helpdesk Pro's. Another plugin changes the names, the prefixes and the p
     "require-dev": {
         "phpunit/phpunit": "^11.5"
     },
+    "replace": {
+        "psr/log": "*"
+    },
     "autoload": {
         "psr-4": {
             "Grav\\Plugin\\HelpdeskPro\\": "classes/"
@@ -88,14 +91,6 @@ This is Helpdesk Pro's. Another plugin changes the names, the prefixes and the p
                 "file_patterns": [
                     "#^getgrav/grav-db-kit/(?!src/|composer\\.json$|LICENSE$)#",
                     "#^yetidevworks/yetisearch/(?!src/|composer\\.json$|LICENSE$)#"
-                ],
-                "packages": [
-                    "psr/log"
-                ]
-            },
-            "exclude_from_prefix": {
-                "packages": [
-                    "psr/log"
                 ]
             }
         }
@@ -140,7 +135,7 @@ What each part is for:
 | `delete_vendor_packages` | Removes the unprefixed copy from `vendor/` after prefixing, and `@composer dump-autoload` then drops it from `vendor/autoload.php`, so the plugin cannot load the unprefixed names by accident. |
 | `include_modified_date: false` | Defensive. If Strauss ever stamps the build date into the headers of the files it edits, every rebuild becomes a diff of the whole directory. Strauss 0.30.0 writes no headers with this config, so today it changes nothing. |
 | `exclude_from_copy.file_patterns` | Ship only `src/`, `composer.json` and `LICENSE` of each package. The kit's path repository mirrors its tests, docs and CI files, and Strauss 0.25+ copies every file of a package unless told otherwise. |
-| `psr/log` in `exclude_from_copy` and `exclude_from_prefix` | YetiSearch type-hints `Psr\Log\LoggerInterface`. Grav core ships psr/log (3.0.2 in Grav 2.0) and its logger implements the unprefixed interface. Prefixed, YetiSearch refuses any logger built on Grav's copy (tried: `YetiSearch::__construct(): Argument #2 ($logger) must be of type ?PluginY\Vendor\Psr\Log\LoggerInterface, Psr\Log\NullLogger given`). Left alone, it uses Grav's copy. |
+| `replace: psr/log` | YetiSearch type-hints `Psr\Log\LoggerInterface`. Grav core ships psr/log (3.0.2 in Grav 2.0), and `replace` tells Composer the plugin gets it from there, so it never enters the lock file, `vendor/` or Strauss. Don't use Strauss exclusions for this: they leave psr/log in the lock and in the autoloader without shipping it. Don't prefix it either, because then YetiSearch refuses any logger built on Grav's copy (tried: `YetiSearch::__construct(): Argument #2 ($logger) must be of type ?PluginY\Vendor\Psr\Log\LoggerInterface, Psr\Log\NullLogger given`). Use `replace` the same way for any other package that core or a required plugin already provides. |
 | `strauss:install` / `strauss:verify` | Download the pinned phar once, and refuse to run any other file. |
 | `@composer dump-autoload` | Rebuild `vendor/autoload.php` after Strauss removed the unprefixed packages. |
 
@@ -234,7 +229,7 @@ Two effects worth knowing:
 - `JobRunner` records a failed job as `$e::class . ': ' . $e->getMessage()`, so a kit exception in `last_error` reads `Grav\Plugin\HelpdeskPro\Vendor\TrilbyMedia\GravDbKit\…`. That is only text.
 - Static state is per copy. The kit's `Migrator` file cache and YetiSearch's `StemmerFactory` cache belong to one plugin's classes, which is the point.
 
-YetiSearch 2.3.6 and 2.4.0 both prefix cleanly: with the prefix taken out again, the prefixed `src/` is byte for byte the tagged source. `bin/yetisearch` is left out by the copy rule (it defines global functions and requires `../vendor/autoload.php`), and psr/log is left unprefixed as described above.
+YetiSearch 2.3.6 and 2.4.0 both prefix cleanly: with the prefix taken out again, the prefixed `src/` is byte for byte the tagged source. `bin/yetisearch` is left out by the copy rule (it defines global functions and requires `../vendor/autoload.php`), and psr/log comes from Grav core through `replace`, as described above.
 
 ## Switching Forum Pro and KahunaCart later
 
