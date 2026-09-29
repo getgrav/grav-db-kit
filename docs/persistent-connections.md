@@ -8,6 +8,8 @@ Sites on MySQL, MariaDB or PostgreSQL served by PHP-FPM (or mod_php). A PHP-FPM 
 
 What it saves depends on the engine. PostgreSQL forks a server process and authenticates it for every new connection: on a benchmark server (Ubuntu, PostgreSQL 16, PHP 8.4) a new connection cost about 6.7 ms, and turning persistence on raised a KahunaCart store's capacity by 50 to 65 percent (home page 187 to 306 requests a second, catalog 132 to 197). Over a local Unix socket the connect and first query went from 1.206 ms to 0.067 ms. MariaDB connects far more cheaply (0.059 to 0.031 ms locally), so it gains little.
 
+Leave it off when something between PHP and the database already pools connections, such as PgBouncer, and on a shared database server whose connection limit you do not control.
+
 It does nothing for SQLite, for a `type: connection` setup (a grav-plugin-database named connection, which opens its own PDO and reaches the kit through `ConnectionFactory::fromPdo()`), or for the CLI (the connection dies with the process anyway).
 
 ## The trade-off
