@@ -44,6 +44,8 @@ $db = ConnectionFactory::create($config['database'], $options);
 
 `ConnectionFactory::sqlite()` turns on WAL, `foreign_keys`, `busy_timeout=5000` and `synchronous=NORMAL`, creates the directory when it is missing and puts a deny-all `.htaccess` and an empty `index.html` in it, because stock Grav web server rules do not block a `.sqlite` download from under `user/`. `mysql()` takes `host`/`port` or `unix_socket`, plus `dbname`, `username` and `password`. `pgsql()` also takes `sslmode`. `fromPdo($pdo, 'sqlite'|'mysql'|'pgsql')` wraps a PDO someone else opened (a grav-plugin-database named connection, a test fixture). `mysqlIsStrict($db)` tells a status page whether the server silently truncates data.
 
+`persistent: true` in a MySQL or PostgreSQL config (at the top level of a `create()` config or in the engine's block) keeps the connection open in the PHP-FPM worker between requests, with an optional `persistent_key`. It is off by default, SQLite ignores it, and each worker then holds a connection, so `max_connections` has to cover every worker of every plugin that turns it on. [docs/persistent-connections.md](docs/persistent-connections.md) covers who it is for, the trade-offs, what is reset when a kept connection is picked up, and a ready-to-copy blueprint field for plugin authors.
+
 `Connection` is a thin PDO wrapper:
 
 | Method | Does |
@@ -95,6 +97,7 @@ Every name is validated as a plain SQL identifier when the object is built. `toA
 | `savepointPrefix` | `sp_` | Nested transactions are savepoints `{prefix}1`, `{prefix}2`… (Forum Pro used `fp_sp_`, KahunaCart `cp_sp_`) |
 | `lockOwner` | `null` (host and pid) | What a lease row says about who holds it; `owner()` resolves it |
 | `lockTtl` | `600` | Default lease length in seconds, and the migration lock's |
+| `persistentKey` | the namespace of this copy of the kit | What PDO files a persistent connection under, so each plugin gets its own; set it to the plugin's slug. A `persistent_key` in the database config wins over it. See [docs/persistent-connections.md](docs/persistent-connections.md#the-persistent-key) |
 
 Pass the same `KitOptions` to `ConnectionFactory` and every class that takes one. Classes that take a `Connection` and no options use the connection's.
 
@@ -249,6 +252,8 @@ GRAVDBKIT_TEST_PGSQL_USER="$USER" vendor/bin/phpunit
 ```
 
 A local MariaDB whose root account uses unix_socket auth is reachable through its socket as your own OS user. CI runs all three engines on PHP 8.3 and 8.4.
+
+`tests/Integration/PersistentConnectionTest.php` does not follow `GRAVDBKIT_TEST_ENGINE`: it runs against every server whose `_DSN` is set and skips the others, since persistent connections are about MySQL and PostgreSQL only. Its user must be allowed to `KILL` its own MySQL connections and `pg_terminate_backend()` its own PostgreSQL backends, which every user is by default.
 
 `tests/Integration/AdoptionTest.php` needs real Forum Pro and KahunaCart databases. It looks for them under `~/workspace/grav-forum` and `~/workspace/grav-kahunacart` (override with `GRAVDBKIT_ADOPT_FORUM_DB`, `GRAVDBKIT_ADOPT_FORUM_PLUGIN`, `GRAVDBKIT_ADOPT_KAHUNACART_DB`, `GRAVDBKIT_ADOPT_KAHUNACART_PLUGIN`) and skips, saying where it looked, when they are missing. It only ever copies the originals.
 
