@@ -1,3 +1,14 @@
+# v1.0.3
+## 09/29/2026
+
+1. [](#new)
+    * Persistent connections for MySQL, MariaDB and PostgreSQL: `persistent: true` in the config `ConnectionFactory::create()`, `mysql()` or `pgsql()` reads keeps the connection open in the PHP-FPM worker between requests. Off by default, and with it off the PDO is built exactly as before. SQLite ignores it. See `docs/persistent-connections.md`
+    * `KitOptions::$persistentKey` (default: the namespace of the plugin's prefixed kit copy) and a `persistent_key` config override, so every plugin gets a persistent connection of its own
+    * A kept connection is reset when it is picked up and nothing in the process still holds it: an open transaction is rolled back, PostgreSQL gets `DISCARD ALL`, and a PostgreSQL backend the server closed is replaced with a fresh connection. A second pickup while the first `Connection` is still held returns that same `Connection` (or the same PDO), so it never rolls back work in progress
+    * README "Used by" section listing every package that depends on the kit
+1. [](#improved)
+    * Unit test that fails when kit SQL would leave session state on a connection (user variables, session settings, temporary tables, named locks)
+
 # v1.0.2
 ## 09/23/2026
 
