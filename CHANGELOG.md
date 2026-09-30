@@ -1,3 +1,9 @@
+# v1.0.4
+## 09/29/2026
+
+1. [](#improved)
+    * The `KitOptions` docblock no longer writes out the kit's unprefixed namespace in prose. Strauss leaves prose alone, so a plugin that checks its prefixed copy for leftover unprefixed names (Mailroom does) flagged it
+
 # v1.0.3
 ## 09/29/2026
 
