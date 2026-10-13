@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace TrilbyMedia\GravDbKit\Jobs;
 
 use TrilbyMedia\GravDbKit\Support\Clock;
+use TrilbyMedia\GravDbKit\Support\Process;
 
 /**
  * Drains the queue within a time budget. Runs inside the scheduler's
@@ -81,9 +82,7 @@ final class JobRunner
      */
     public static function hostWorkerId(): string
     {
-        $host = gethostname();
-
-        return substr(($host === false ? 'unknown' : $host) . ':' . (getmypid() ?: 0), 0, 64);
+        return substr(Process::label(), 0, 64);
     }
 
     /** The queue this runner claims from. */
