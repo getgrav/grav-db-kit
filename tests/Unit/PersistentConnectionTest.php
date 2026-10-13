@@ -95,13 +95,18 @@ final class PersistentConnectionTest extends TestCase
         }
         self::assertGreaterThan(30, \count($files));
 
+        // The one exception: KitOptions::$mysqlStrict's init command. It runs on a handle filed under its own `+strict` key, so every request that picks that handle up wants the sql_mode it leaves.
+        $allowed = ['Database/ConnectionFactory.php' => ['"SET SESSION sql_mode = IF("']];
+
         $found = [];
         foreach ($files as $path) {
+            $relative = substr($path, \strlen($root) + 1);
             foreach (token_get_all((string)file_get_contents($path)) as $token) {
                 if (\is_array($token)
                     && ($token[0] === T_CONSTANT_ENCAPSED_STRING || $token[0] === T_ENCAPSED_AND_WHITESPACE)
+                    && !\in_array($token[1], $allowed[$relative] ?? [], true)
                     && preg_match($pattern, $token[1], $match)) {
-                    $found[] = substr($path, \strlen($root) + 1) . ':' . $token[2] . ' ' . $match[0];
+                    $found[] = $relative . ':' . $token[2] . ' ' . $match[0];
                 }
             }
         }

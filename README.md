@@ -111,6 +111,7 @@ Every name is validated as a plain SQL identifier when the object is built. `toA
 | `lockOwner` | `null` (host and pid) | What a lease row says about who holds it; `owner()` resolves it |
 | `lockTtl` | `600` | Default lease length in seconds, and the migration lock's |
 | `persistentKey` | the namespace of this copy of the kit | What PDO files a persistent connection under, so each plugin gets its own; set it to the plugin's slug. A `persistent_key` in the database config wins over it. See [docs/persistent-connections.md](docs/persistent-connections.md#the-persistent-key) |
+| `mysqlStrict` | `false` | Put every MySQL/MariaDB connection the kit opens into strict mode: `STRICT_TRANS_TABLES` is added to the session's `sql_mode` on connect when no strict flag is set, and the server's other flags are kept. For a shared server that is not strict and whose `my.cnf` cannot change for one site. A `fromPdo()` connection is left alone |
 
 Pass the same `KitOptions` to `ConnectionFactory` and every class that takes one. Classes that take a `Connection` and no options use the connection's.
 

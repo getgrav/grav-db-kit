@@ -1,3 +1,9 @@
+# v1.0.5
+## 10/13/2026
+
+1. [](#new)
+    * `KitOptions::$mysqlStrict`: when it is on, every MySQL or MariaDB connection `ConnectionFactory` opens adds `STRICT_TRANS_TABLES` to its session `sql_mode` on connect (`PDO::MYSQL_ATTR_INIT_COMMAND`), unless a strict flag is already there. The server's other flags are kept, and other databases on the server are not touched. A persistent strict connection is filed under its own handle (`<key>+strict`), because the init command only runs when a handle is opened. Off by default
+
 # v1.0.4
 ## 09/29/2026
 

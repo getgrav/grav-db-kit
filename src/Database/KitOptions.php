@@ -19,6 +19,7 @@ namespace TrilbyMedia\GravDbKit\Database;
  *    and how long the migration lock lasts. Ten minutes, as before: a crashed
  *    migration locks the schema for at most that long.
  *  - `persistentKey`: the name PDO files this plugin's persistent connections under, when a MySQL or PostgreSQL config turns on `persistent` (see ConnectionFactory). PDO hands one persistent handle to everyone who opens the same DSN, user and password under the same key, so the key is what stops the pickup reset in one plugin from rolling back a transaction another plugin has open on the same database. Each plugin sets its own, usually its slug; a `persistent_key` in the database config wins over it (see ConnectionFactory). The default is the namespace of the kit copy that builds the connection, which Strauss makes different in every plugin, so two plugins that forget still get handles of their own. A numeric string is refused because PDO reads it as a plain on/off flag and would share the handle with every `ATTR_PERSISTENT => true` caller.
+ *  - `mysqlStrict`: put every MySQL or MariaDB connection the kit opens into strict mode, by adding `STRICT_TRANS_TABLES` to the session's `sql_mode` when neither strict flag is already there. Every other flag the server sets is kept. Off by default, which leaves the server's mode alone. It is for hosts that run a shared server without strict mode and cannot change `my.cnf` for one site; it changes only the plugin's own session. A `type: connection` PDO (see ConnectionFactory::fromPdo()) belongs to whoever opened it and is left alone.
  */
 final readonly class KitOptions
 {
@@ -31,6 +32,7 @@ final readonly class KitOptions
         public ?string $lockOwner = null,
         public int $lockTtl = 600,
         string $persistentKey = __NAMESPACE__,
+        public bool $mysqlStrict = false,
     ) {
         if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]{0,40}$/', $savepointPrefix)) {
             throw new \InvalidArgumentException("Invalid savepoint prefix: {$savepointPrefix}");

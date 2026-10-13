@@ -44,6 +44,13 @@ final class ConnectionFactory
     ];
 
     /**
+     * Sent on connect when KitOptions::$mysqlStrict is on: adds STRICT_TRANS_TABLES unless the session already has a strict flag, keeping the rest of the server's mode.
+     */
+    private const MYSQL_STRICT_INIT = "SET SESSION sql_mode = IF("
+        . "FIND_IN_SET('STRICT_TRANS_TABLES', @@SESSION.sql_mode) OR FIND_IN_SET('STRICT_ALL_TABLES', @@SESSION.sql_mode), "
+        . "@@SESSION.sql_mode, CONCAT_WS(',', NULLIF(@@SESSION.sql_mode, ''), 'STRICT_TRANS_TABLES'))";
+
+    /**
      * The persistent PDO and Connection last handed out in this process for each handle, held weakly so they drop out once freed. Static, so PHP-FPM empties it between requests; each Strauss-prefixed copy of the kit has its own.
      *
      * @var array<string, array{pdo: \WeakReference<\PDO>, connection: \WeakReference<Connection>}>
@@ -103,6 +110,7 @@ final class ConnectionFactory
      * `unix_socket` wins over host and port when it is given, which is how a
      * local MariaDB that authenticates the OS user over its socket is reached.
      * `persistent` keeps the connection open between requests (see the class docblock).
+     * KitOptions::$mysqlStrict puts the session into strict mode on connect.
      *
      * @param array{host?: string, port?: int|string, unix_socket?: string, dbname?: string, username?: string, password?: string, persistent?: bool|int|string, persistent_key?: string} $cfg
      */
@@ -122,7 +130,7 @@ final class ConnectionFactory
             return self::pickUp('mysql', $dsn, $cfg, $options);
         }
 
-        $pdo = new \PDO($dsn, $cfg['username'] ?? '', $cfg['password'] ?? '', self::PDO_OPTIONS);
+        $pdo = new \PDO($dsn, $cfg['username'] ?? '', $cfg['password'] ?? '', self::mysqlAttributes($options) + self::PDO_OPTIONS);
 
         return new Connection($pdo, new MysqlDialect(), $options);
     }
@@ -246,6 +254,11 @@ final class ConnectionFactory
         $key = isset($cfg['persistent_key']) && $cfg['persistent_key'] !== ''
             ? KitOptions::checkPersistentKey((string)$cfg['persistent_key'])
             : $options->persistentKey;
+        $init = $type === 'mysql' ? self::mysqlAttributes($options) : [];
+        if ($init !== []) {
+            // The init command only runs when a handle is first opened, so a strict session gets a handle of its own rather than one opened before strict mode was turned on.
+            $key .= '+strict';
+        }
         $handle = hash('xxh128', $dsn . "\0" . $username . "\0" . $password . "\0" . $key);
 
         $held = self::$persistentHandles[$handle] ?? null;
@@ -262,7 +275,7 @@ final class ConnectionFactory
             return $connection === null ? self::remember($handle, $pdo, $wrapper) : $wrapper;
         }
 
-        $attributes = [\PDO::ATTR_PERSISTENT => $key] + self::PDO_OPTIONS;
+        $attributes = [\PDO::ATTR_PERSISTENT => $key] + $init + self::PDO_OPTIONS;
         $pdo = new \PDO($dsn, $username, $password, $attributes);
 
         try {
@@ -275,6 +288,23 @@ final class ConnectionFactory
         }
 
         return self::remember($handle, $pdo, new Connection($pdo, self::dialectFor($type), $options));
+    }
+
+    /**
+     * The extra PDO attributes a MySQL connection gets from KitOptions: the strict-mode init command, or nothing.
+     *
+     * @return array<int, string>
+     */
+    private static function mysqlAttributes(?KitOptions $options): array
+    {
+        if (!($options?->mysqlStrict ?? false)) {
+            return [];
+        }
+
+        // Pdo\Mysql::ATTR_INIT_COMMAND is PHP 8.4's name; the PDO::MYSQL_ constant it replaces is deprecated from 8.5.
+        $attribute = \defined('Pdo\\Mysql::ATTR_INIT_COMMAND') ? \constant('Pdo\\Mysql::ATTR_INIT_COMMAND') : \PDO::MYSQL_ATTR_INIT_COMMAND;
+
+        return [$attribute => self::MYSQL_STRICT_INIT];
     }
 
     private static function remember(string $handle, \PDO $pdo, Connection $connection): Connection
