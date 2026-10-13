@@ -1,3 +1,9 @@
+# v1.0.6
+## 10/13/2026
+
+1. [](#bugfix)
+    * Works on PHP-FPM pools that disable `getmypid()` and `gethostname()`, a common hardening. The default lease owner (`KitOptions::owner()`) and `JobRunner::hostWorkerId()` called them directly, which is a fatal error when they are disabled, so every lease taken in a web request and the after-response job drain failed. They now go through the new `Support\Process`, which falls back to `0` and `unknown`. Nothing matches on either value, so the labels only get less telling [getgrav/grav-premium-issues#625](https://github.com/getgrav/grav-premium-issues/issues/625)
+
 # v1.0.5
 ## 10/13/2026
 
