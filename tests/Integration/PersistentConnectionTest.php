@@ -243,6 +243,58 @@ final class PersistentConnectionTest extends TestCase
     }
 
     /** @return array<string, mixed> */
+    /** @return array<string, array{string, string}> */
+    public static function strictModes(): array
+    {
+        return [
+            'not strict' => ['NO_ENGINE_SUBSTITUTION', 'STRICT_TRANS_TABLES,NO_ENGINE_SUBSTITUTION'],
+            'empty' => ['', 'STRICT_TRANS_TABLES'],
+            'already strict' => ['ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES', 'ONLY_FULL_GROUP_BY,STRICT_TRANS_TABLES'],
+            'strict for all tables' => ['STRICT_ALL_TABLES', 'STRICT_ALL_TABLES'],
+        ];
+    }
+
+    /**
+     * KitOptions::$mysqlStrict's init command adds STRICT_TRANS_TABLES only when the session has no strict flag, and keeps every other flag. Run by hand here because the test server is likely strict already, so a fresh connection could not tell the command from the server default.
+     */
+    #[DataProvider('strictModes')]
+    public function testTheStrictInitCommandAddsStrictModeOnlyWhenMissing(string $before, string $after): void
+    {
+        $db = $this->plain('mysql');
+        $db->run('SET SESSION sql_mode = ?', [$before]);
+        $db->run((string)(new \ReflectionClassConstant(ConnectionFactory::class, 'MYSQL_STRICT_INIT'))->getValue());
+
+        self::assertSame($after, $db->fetchValue('SELECT @@SESSION.sql_mode'));
+    }
+
+    public function testMysqlStrictConnectionsAreStrict(): void
+    {
+        $options = new KitOptions(persistentKey: self::KEY, mysqlStrict: true);
+        $cfg = $this->configFor('mysql');
+
+        foreach ([false, true] as $persistent) {
+            $db = ConnectionFactory::mysql(['persistent' => $persistent] + $cfg, $options);
+            self::assertTrue(ConnectionFactory::mysqlIsStrict($db));
+            self::assertSame($persistent, (bool)$db->pdo()->getAttribute(\PDO::ATTR_PERSISTENT));
+        }
+    }
+
+    /** The init command only runs when a handle is opened, so a strict caller must never pick up a handle opened without it. */
+    public function testAStrictPersistentConnectionDoesNotShareAPlainHandle(): void
+    {
+        $plain = $this->open('mysql');
+        $plainId = $this->backendId($plain);
+        unset($plain);
+
+        $strict = ConnectionFactory::create(
+            ['type' => 'mysql', 'mysql' => ['persistent' => true] + $this->configFor('mysql')],
+            new KitOptions(persistentKey: self::KEY, mysqlStrict: true)
+        );
+
+        self::assertNotSame($plainId, $this->backendId($strict));
+        self::assertTrue(ConnectionFactory::mysqlIsStrict($strict));
+    }
+
     private function describe(Connection $connection, string $type): array
     {
         $pdo = $connection->pdo();
