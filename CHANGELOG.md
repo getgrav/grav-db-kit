@@ -1,3 +1,11 @@
+# v1.0.7
+## 11/16/2026
+
+1. [](#improved)
+    * `JobRunner::run()` returns a `retrying` count beside `failed`: the jobs that threw on this pass but still have attempts left and went back on the queue with a backoff. `failed - retrying` is the number that just ran out, so a worker can exit non-zero only for those and stop reporting a network blip that goes through on its retry a minute later
+2. [](#bugfix)
+    * `JobQueue::oldestPendingAge()` (and with it `health()`'s `stale` flag) measured a job's wait from `created_at`, so a job queued with a delay looked that many minutes overdue the moment it came due. Affiliates' holds sweep, queued 15 minutes ahead, raised a stalled-queue alert on a healthy queue whenever a request checked in the seconds before the next cron tick. The wait is now measured from when the job became due: `run_after` for a delayed or retried job, `created_at` for one queued to run straight away
+
 # v1.0.6
 ## 10/13/2026
 

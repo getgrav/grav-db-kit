@@ -141,15 +141,23 @@ final class JobRunner
      * Drain the queue until it is empty, the budget is spent, or `$maxJobs`
      * jobs have been claimed.
      *
+     * `failed` counts every job that threw on this pass. `retrying` is the part
+     * of it that still has attempts left and goes back on the queue with a
+     * backoff, so `failed - retrying` is the number that just ran out. A
+     * scheduler that reports the pass as failed should look at that
+     * difference: a job that throws once on a network blip and goes through on
+     * its retry a minute later is the queue working, not a failure to report.
+     *
      * @param int $maxJobs 0 for no cap; Forum Pro's worker capped a pass at
      *        fifty jobs, and a plugin that wants the same keeps it here
-     * @return array{processed: int, failed: int, deferred: int}
+     * @return array{processed: int, failed: int, retrying: int, deferred: int}
      */
     public function run(int $timeBudgetSeconds = 50, int $maxJobs = 0): array
     {
         $deadline = ($this->clock)() + $timeBudgetSeconds;
         $processed = 0;
         $failed = 0;
+        $retrying = 0;
         $deferred = 0;
         $claimed = 0;
 
@@ -175,9 +183,16 @@ final class JobRunner
                 self::OUTCOME_CANCELLED => null,
                 default => $failed++,
             };
+
+            // The claimed row already carries the attempt claim() spent, so a
+            // job below its limit here is one fail() put back with a backoff.
+            if ($outcome === self::OUTCOME_FAILED
+                && (int)($job['attempts'] ?? 0) < (int)($job['max_attempts'] ?? 0)) {
+                $retrying++;
+            }
         }
 
-        return ['processed' => $processed, 'failed' => $failed, 'deferred' => $deferred];
+        return ['processed' => $processed, 'failed' => $failed, 'retrying' => $retrying, 'deferred' => $deferred];
     }
 
     /**

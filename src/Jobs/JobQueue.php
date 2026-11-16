@@ -511,20 +511,29 @@ final class JobQueue
     }
 
     /**
-     * How long the oldest runnable job has been waiting, in seconds, or null
-     * when nothing is waiting.
+     * How long the oldest runnable job has been due without being picked up,
+     * in seconds, or null when nothing is waiting.
      *
-     * `created_at`, not `run_after`: a job's run_after moves forward with every
-     * retry backoff, so measuring from it would report a queue that has been
-     * stuck for a week as thirty seconds behind. What an operator needs to
-     * know is how long ago the work was asked for.
+     * Measured from the moment the job became due: `run_after` when it was
+     * queued with a delay or put back after a failure, `created_at` when it was
+     * queued to run straight away (those carry a `run_after` of 0). A job queued with a delay is not late while it waits for
+     * its own start time: Affiliates queues a sweep fifteen minutes ahead, and
+     * measured from `created_at` it looked fifteen minutes overdue the second
+     * it came due, which is a stalled-queue alert for a queue that was fine.
+     *
+     * A job that keeps failing does not hide here either. Only a worker moves
+     * `run_after` forward (a retry backoff or a deferral), so a queue nothing
+     * is draining still ages from the moment its jobs came due. A worker that
+     * runs a job that keeps throwing is a different problem, and the job
+     * shows up in health()'s `failed` count once its attempts run out.
      */
     public function oldestPendingAge(?int $now = null): ?int
     {
         $now ??= $this->now();
 
         $oldest = $this->db->fetchValue(
-            "SELECT MIN(created_at) FROM {$this->table} WHERE " . self::RUNNABLE . ' AND run_after <= ?',
+            "SELECT MIN(CASE WHEN run_after > created_at THEN run_after ELSE created_at END)
+             FROM {$this->table} WHERE " . self::RUNNABLE . ' AND run_after <= ?',
             [$now]
         );
 

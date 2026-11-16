@@ -73,7 +73,7 @@ final class JobDeferralTest extends TestCase
         $row = $queue->find($emailId);
         self::assertNotNull($row['completed_at'], 'the email went out in the same pass');
         self::assertSame(1, (int)$row['attempts'], 'only the send that actually ran was counted');
-        self::assertSame(['processed' => 1, 'failed' => 0, 'deferred' => 1], $result);
+        self::assertSame(['processed' => 1, 'failed' => 0, 'retrying' => 0, 'deferred' => 1], $result);
         self::assertSame([5], $this->slept);
     }
 
@@ -112,7 +112,7 @@ final class JobDeferralTest extends TestCase
         $result = $runner->run(50);
 
         self::assertSame([], $this->slept);
-        self::assertSame(['processed' => 0, 'failed' => 0, 'deferred' => 0], $result);
+        self::assertSame(['processed' => 0, 'failed' => 0, 'retrying' => 0, 'deferred' => 0], $result);
     }
 
     /** A single wait never runs past ten seconds, however far out the job is. */
