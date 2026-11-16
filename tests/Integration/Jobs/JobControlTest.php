@@ -231,7 +231,7 @@ final class JobControlTest extends TestCase
         self::assertNull($job['locked_at'], 'the lock was given back');
         self::assertSame(0, (int)$job['attempts'], 'obeying is not failing: the attempt is returned');
         self::assertNull($job['last_error']);
-        self::assertSame(['processed' => 0, 'failed' => 0, 'deferred' => 0], $result);
+        self::assertSame(['processed' => 0, 'failed' => 0, 'retrying' => 0, 'deferred' => 0], $result);
     }
 
     /** A checkpoint with no row to read is a no-op, for a handler run outside the queue. */

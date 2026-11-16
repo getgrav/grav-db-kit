@@ -225,7 +225,7 @@ final class JobQueueTest extends TestCase
         $now = $this->clock->now();
         foreach ([7200, 3600, 60] as $age) {
             $id = $queue->enqueue('order.grant_downloads', []);
-            $this->db->update($this->t, ['created_at' => $now - $age], 'id = ?', [$id]);
+            $this->db->update($this->t, ['created_at' => $now - $age, 'run_after' => $now - $age], 'id = ?', [$id]);
         }
 
         $health = $queue->health(900, $now);
@@ -237,19 +237,51 @@ final class JobQueueTest extends TestCase
     }
 
     /**
-     * A job's run_after moves forward with every retry backoff, so the age has
-     * to be measured from created_at — otherwise a job that has been failing
-     * for a day reports as thirty seconds behind.
+     * kahunacart.com, 2026-11-16: Affiliates queues its holds sweep fifteen
+     * minutes ahead. Measured from created_at, the job was fifteen minutes old
+     * the second it came due, and a page request in the few seconds before the
+     * next cron tick raised a stalled-queue alert for a healthy queue.
      */
-    public function testTheAgeIsMeasuredFromWhenTheWorkWasAskedForNotFromTheBackoff(): void
+    public function testADelayedJobIsNotLateTheMomentItComesDue(): void
+    {
+        $queue = $this->queue();
+
+        $id = $queue->enqueue('affiliates.release_holds', [], $this->clock->now() + 900);
+        $this->assertNull($queue->oldestPendingAge(), 'not due yet, so not waiting');
+
+        $this->clock->advance(900);
+        $health = $queue->health(900);
+
+        $this->assertSame(1, $health['pending']);
+        $this->assertSame(0, $health['oldest_pending_age'], 'measured from when it came due');
+        $this->assertFalse($health['stale']);
+
+        // The same job with nothing running the worker does go stale, counted
+        // from its own start time.
+        $this->clock->advance(900);
+        $this->assertTrue($queue->health(900)['stale']);
+        $this->assertSame($id, (int)$queue->claim('w')['id']);
+    }
+
+    /**
+     * A queue nothing drains never moves run_after, so a retried job that is
+     * due again ages from its retry time and still goes stale.
+     */
+    public function testARetriedJobAgesFromWhenItWasDueAgain(): void
     {
         $queue = $this->queue();
 
         $now = $this->clock->now();
         $id = $queue->enqueue('order.confirmation_email', []);
-        $this->db->update($this->t, ['created_at' => $now - 86400, 'run_after' => $now - 30], 'id = ?', [$id]);
+        $this->db->update(
+            $this->t,
+            ['attempts' => 1, 'created_at' => $now - 86400, 'run_after' => $now - 3600, 'last_error' => 'boom'],
+            'id = ?',
+            [$id]
+        );
 
-        $this->assertSame(86400, $queue->oldestPendingAge($now));
+        $this->assertSame(3600, $queue->oldestPendingAge($now));
+        $this->assertTrue($queue->health(900, $now)['stale']);
     }
 
     public function testAJobStillWaitingForItsBackoffIsNotCountedYet(): void

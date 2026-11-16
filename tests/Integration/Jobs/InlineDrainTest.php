@@ -55,7 +55,7 @@ final class InlineDrainTest extends TestCase
         $cron = new JobRunner($queue, 'cron', fn (): int => $this->now);
         $cron->register('order.confirmation_email', $handler);
         self::assertSame(
-            ['processed' => 0, 'failed' => 0, 'deferred' => 0],
+            ['processed' => 0, 'failed' => 0, 'retrying' => 0, 'deferred' => 0],
             $cron->run(5),
             'the tick has nothing left to do'
         );
